@@ -10,7 +10,7 @@ class BSPNode:
 
     def split(self) -> None:
         direction = random.randint(0, 1)
-        offset = random.uniform(0.2, 0.8)
+        offset = random.uniform(0.35, 0.65)
 
         if direction == 0:
             left_area = self.space.scale_by(offset, 1)
@@ -28,5 +28,34 @@ class BSPNode:
         self.left = BSPNode(left_space)
         self.right = BSPNode(right_space)
 
-def generate_dungeon(initial_space, room_ratio = 2.5):
-    pass
+    def traverse(self):
+        stack = [self]
+        output = []
+
+        while stack:
+            node = stack.pop()
+            output.append(node)
+
+            if node.right:
+                stack.append(node.right)
+            if node.left:
+                stack.append(node.left)
+
+        return output
+
+def generate_dungeon(initial_area, room_ratio = 2.5, min_size = 20):
+    space = initial_area.space
+    
+    # Prevent division by zero - stop if either dimension is too small
+    if space.size[0] <= min_size or space.size[1] <= min_size:
+        return
+    
+    current_ratio = max(space.size[0] / space.size[1], space.size[1] / space.size[0])
+
+    if current_ratio >= room_ratio:
+        return
+    
+    initial_area.split()
+
+    generate_dungeon(initial_area.left, room_ratio)
+    generate_dungeon(initial_area.right, room_ratio)

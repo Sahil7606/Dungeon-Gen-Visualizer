@@ -1,5 +1,5 @@
 import sys, pygame
-from bsp import BSPNode
+from bsp import BSPNode, generate_dungeon
 pygame.init()
 
 # Initializes screen
@@ -8,17 +8,19 @@ screen = pygame.display.set_mode(size)
 default_blue = (16, 38, 66)
 
 space = pygame.Rect((width // 2) - 300, (height // 2) - 220, 600, 440)
-bsp_node = BSPNode(space)
-bsp_node.split()
+initial_area = BSPNode(space)
+generate_dungeon(initial_area, 2, 40)
 
 # Runs until X button pressed
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             sys.exit()
-            
+           
     screen.fill((255, 255, 255))
-    pygame.draw.rect(screen, default_blue, bsp_node.space, 10)
-    pygame.draw.rect(screen, default_blue, bsp_node.left.space, 10)
-    pygame.draw.rect(screen, default_blue, bsp_node.right.space, 10)
+
+    spaces = initial_area.traverse()
+    for space in spaces:
+        pygame.draw.rect(screen, default_blue, space.space, 3)
+
     pygame.display.flip()
