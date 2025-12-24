@@ -3,13 +3,13 @@ from bsp import BSPNode, generate_dungeon
 pygame.init()
 
 # Initializes screen
-size =  width, height = 640, 480
+size =  width, height = 1280, 720
 screen = pygame.display.set_mode(size)
 default_blue = (16, 38, 66)
 
-space = pygame.Rect((width // 2) - 300, (height // 2) - 220, 600, 440)
+space = pygame.Rect((width // 2) - 600, (height // 2) - 320, 1200, 640)
 initial_area = BSPNode(space)
-generate_dungeon(initial_area, 2, 40)
+generate_dungeon(initial_area, 1.75, 40)
 
 # Runs until X button pressed
 while True:
@@ -21,6 +21,6 @@ while True:
 
     spaces = initial_area.traverse()
     for space in spaces:
-        pygame.draw.rect(screen, default_blue, space.space, 3)
+        pygame.draw.rect(screen, default_blue, space.space, 2)
 
     pygame.display.flip()

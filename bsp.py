@@ -43,19 +43,27 @@ class BSPNode:
 
         return output
 
-def generate_dungeon(initial_area, room_ratio = 2.5, min_size = 20):
+def generate_dungeon(initial_area, room_ratio = 1.75, min_size = 20):
     space = initial_area.space
     
     # Prevent division by zero - stop if either dimension is too small
     if space.size[0] <= min_size or space.size[1] <= min_size:
         return
     
-    current_ratio = max(space.size[0] / space.size[1], space.size[1] / space.size[0])
-
-    if current_ratio >= room_ratio:
-        return
+    # Add max iterations to prevent infinite loop
+    MAX_ATTEMPTS = 100
+    attempts = 0
     
-    initial_area.split()
+    while True:
+        initial_area.split()
+        left_size = initial_area.left.space.size
+        right_size = initial_area.right.space.size
+        l_ratio = max(left_size[0] / left_size[1], left_size[1] / left_size[0])
+        r_ratio = max(right_size[0] / right_size[1], right_size[1] / right_size[0])
+        attempts += 1
 
-    generate_dungeon(initial_area.left, room_ratio)
-    generate_dungeon(initial_area.right, room_ratio)
+        if (l_ratio >= room_ratio or r_ratio >= room_ratio) and attempts < MAX_ATTEMPTS:
+            break
+
+    generate_dungeon(initial_area.left, room_ratio, min_size)
+    generate_dungeon(initial_area.right, room_ratio, min_size)
