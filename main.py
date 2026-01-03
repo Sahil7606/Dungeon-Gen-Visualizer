@@ -1,5 +1,5 @@
 import sys, pygame
-from bsp import BSPNode, generate_dungeon
+from bsp import BSPNode, BSPTree
 pygame.init()
 
 # Initializes screen
@@ -9,7 +9,7 @@ default_blue = (16, 38, 66)
 
 space = pygame.Rect((width // 2) - 600, (height // 2) - 320, 1200, 640)
 initial_area = BSPNode(space)
-generate_dungeon(initial_area, 1.75, 40)
+BSPTree.generate_tree(initial_area, 1.75, 40)
 
 # Runs until X button pressed
 while True:
@@ -19,7 +19,7 @@ while True:
            
     screen.fill((255, 255, 255))
 
-    spaces = initial_area.traverse()
+    spaces = BSPTree.traverse(initial_area)
     for space in spaces:
         pygame.draw.rect(screen, default_blue, space.space, 2)
 
