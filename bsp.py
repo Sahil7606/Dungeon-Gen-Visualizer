@@ -8,7 +8,7 @@ class BSPNode:
         self.left = left
         self.right = right
 
-    def split(self, direction, offset) -> None:
+    def split(self, direction: int, offset: float) -> None:
 
         if direction == 0:
             left_area = self.space.scale_by(offset, 1)
@@ -38,7 +38,7 @@ class BSPNode:
 class BSPTree:
 
     @staticmethod
-    def generate_tree(root, space_ratio = 1.75, min_size = 20, depth = 5):
+    def generate_tree(root, space_ratio: float = 1.75, min_size: int = 20, depth: int = 5) -> None:
 
         space = root.space
 
@@ -69,7 +69,7 @@ class BSPTree:
         BSPTree.generate_tree(root.left, space_ratio, min_size, depth - 1)
         BSPTree.generate_tree(root.right, space_ratio, min_size, depth - 1)
 
-    def traverse(root):
+    def traverse(root) -> list[pygame.Rect]:
         stack = [root]
         output = []
 
