@@ -9,7 +9,11 @@ default_blue = (16, 38, 66)
 
 space = pygame.Rect((width // 2) - 600, (height // 2) - 320, 1200, 640)
 initial_area = BSPNode(space)
-BSPTree.generate_tree(initial_area, 2, 150, 4)
+BSPTree.generate_tree(initial_area, 2, 150, 5)
+spaces = BSPTree.traverse(initial_area)
+
+for space in spaces:
+    space.generate_room();
 
 # Runs until X button pressed
 while True:
@@ -19,8 +23,13 @@ while True:
            
     screen.fill((255, 255, 255))
 
-    spaces = BSPTree.traverse(initial_area)
+    
+
     for space in spaces:
-        pygame.draw.rect(screen, default_blue, space.space, 2)
+        #pygame.draw.rect(screen, default_blue, space.space, 2)
+        
+        if not space.right and not space.left:
+            pygame.draw.rect(screen, default_blue, space.room, 2)
+        
 
     pygame.display.flip()

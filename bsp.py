@@ -44,12 +44,19 @@ class BSPNode:
         self.left = BSPNode(left_space)
         self.right = BSPNode(right_space)
 
-    def generate_room():
+    def generate_room(self, min_area_coverage: float = .50):
         # How do I get a rectangle within a rectangle?
         # To ensure it isnt tiny I can compare the outer rect to the inner rect
-        # The topleft attribute of the inner should be a random point chosen from the 2nd quadrant of the outer
-        # Then the width and height are chosen at random until we get a rect that covers ~75% of the area
-        pass
+
+        if self.right or self.left:
+            return
+
+        self.room = self.space.copy()
+
+        # Scale down?
+        scale_x = random.uniform(0.4, 0.9)
+        scale_y = random.uniform(0.4, 0.9)
+        self.room.scale_by_ip(scale_x, scale_y)
 
     
 
