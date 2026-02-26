@@ -28,17 +28,19 @@ class BSPNode:
         # Vertical split
         if direction == 0:
             left_area = self.space.scale_by(offset, 1)
-            right_area = self.space.scale_by(1 - offset, 1)
 
             left_space = pygame.Rect((self.space.topleft), (left_area.size))
-            right_space = pygame.Rect((left_space.topright[0], left_space.topright[1]), (right_area.size))
+
+            # Compute right by subtraction rather than scaling to avoid float rounding errors
+            right_space = pygame.Rect((left_space.topright[0], left_space.topright[1]), 
+                                      (self.space.width - left_area.width, self.space.height))
         # Horizontal split
         else:
             left_area = self.space.scale_by(1, offset)
-            right_area = self.space.scale_by(1, 1 - offset)
 
             left_space = pygame.Rect((self.space.topleft), (left_area.size))
-            right_space = pygame.Rect((left_space.bottomleft[0], left_space.bottomleft[1]), (right_area.size))
+            right_space = pygame.Rect((left_space.bottomleft[0], left_space.bottomleft[1]),
+                                       (self.space.width, self.space.height - left_area.height))
 
         # Initialize children
         self.left = BSPNode(left_space)
@@ -105,7 +107,7 @@ class BSPTree:
         BSPTree.generate_tree(root.left, space_ratio, min_size, depth - 1)
         BSPTree.generate_tree(root.right, space_ratio, min_size, depth - 1)
 
-    def traverse(root: BSPNode) -> list[BSPNode]:
+    def get_leaves(root: BSPNode) -> list[BSPNode]:
         """
         This traverses the tree
 
@@ -120,7 +122,9 @@ class BSPTree:
 
         while stack:
             node = stack.pop()
-            output.append(node)
+            
+            if not node.left and not node.right:
+                output.append(node)
 
             if node.right:
                 stack.append(node.right)
