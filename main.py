@@ -9,7 +9,7 @@ default_blue = (16, 38, 66)
 
 space = pygame.Rect((width // 2) - 600, (height // 2) - 320, 1200, 640)
 initial_area = BSPNode(space)
-BSPTree.generate_tree(initial_area, 2, 150, 5)
+BSPTree.generate_tree(initial_area, 2, 150, 90)
 spaces = BSPTree.get_leaves(initial_area)
 
 for space in spaces:

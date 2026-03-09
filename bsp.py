@@ -2,6 +2,10 @@ from __future__ import annotations
 import pygame
 import random
 
+# TODO: Find node neighbors
+# TODO: Draw hallways
+# TODO: Connect into one polygon
+
 class BSPNode:
     """
     Implements node for the binary space partitioning tree, used for generating video game maps
@@ -12,10 +16,11 @@ class BSPNode:
         right (BSPNode|None): a pointer to the right child node
     """
 
-    def __init__(self, space: pygame.Rect, left: BSPNode|None = None, right: BSPNode|None = None, room = None):
+    def __init__(self, space: pygame.Rect, left: BSPNode|None = None, right: BSPNode|None = None):
         self.space = space
         self.left = left
         self.right = right
+        self.room = None
 
     def split(self, direction: int, offset: float) -> None:
         """
@@ -47,9 +52,7 @@ class BSPNode:
         self.right = BSPNode(right_space)
 
     def generate_room(self, min_area_coverage: float = .50):
-        # How do I get a rectangle within a rectangle?
-        # To ensure it isnt tiny I can compare the outer rect to the inner rect
-
+        # (Refactor Later) Not random enough
         if self.right or self.left:
             return
 
@@ -132,3 +135,6 @@ class BSPTree:
                 stack.append(node.left)
 
         return output
+    
+    def get_neighbors():
+        pass
