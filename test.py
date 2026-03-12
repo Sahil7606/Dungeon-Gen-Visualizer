@@ -4,7 +4,7 @@ This script trials a grid based approach to BSP generation for better scalabilit
 
 import random
 
-world = [[0] * 320] * 180
+world = [[1] * 40 for _ in range(30)]
 
 class Rect:
 
@@ -36,14 +36,37 @@ class BSPNode:
         offset =  random.uniform(0.35, 0.65)
 
         if direction == 0:
-            left_space = Rect(self.top_left, int(self.width * offset), self.height)
-            right_space = Rect(self.top_right, self.width - left_space.width, self.height)
+            left_space = Rect(self.space.top_left, int(self.space.width * offset), self.space.height)
+            right_space = Rect(left_space.top_right, self.space.width - left_space.width, self.space.height)
         else:
-            left_space = Rect(self.top_left, self.width, int(self.height * offset))
-            right_space = Rect(self.bottom_left, self.width, self.height - left_space.height)
+            left_space = Rect(self.space.top_left, self.space.width, int(self.space.height * offset))
+            right_space = Rect(left_space.bottom_left, self.space.width, self.space.height - left_space.height)
 
-        self.left = Rect(left_space)
-        self.right = Rect(right_space)
+        self.left = BSPNode(left_space)
+        self.right = BSPNode(right_space)
+
+root = BSPNode(Rect((1, 1), 38, 28))
+
+def write_to_grid(r: Rect):
+    for i in range(len(world)):
+        for j in range(len(world[i])):
+            if (j == r.top_left[0] or j == r.top_left[0] + r.width - 1) and (r.top_left[1] <= i <= r.top_left[1] + r.height - 1):
+                world[i][j] = 0
+
+            if (i == r.top_left[1] or i == r.top_left[1] + r.height - 1) and (r.top_left[0] <= j <= r.top_left[0] + r.width - 1):
+                world[i][j] = 0
+
+root.split()
+write_to_grid(root.left.space)
+write_to_grid(root.right.space)
+
+for row in world:
+    string = ""
+    for cell in row:
+        string += (str(cell) + " ")
+
+    print(string)
+        
 
 
     
