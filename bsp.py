@@ -6,20 +6,41 @@ import random
 # TODO: Draw hallways
 # TODO: Connect into one polygon
 
+# NEXT: review and reorganize
+
+class Rect:
+    def __init__(self, top_left: tuple[int], width: int, height: int):
+        self.top_left = top_left
+        self.width = width
+        self.height = height
+
+    @property
+    def bottom_right(self):
+        return (self.top_left[0] + self.width, self.top_left[1] + self.height)
+    
+    @property
+    def bottom_left(self):
+        return (self.top_left[0], self.top_left[1] + self.height)
+    
+    @property
+    def top_right(self):
+        return (self.top_left[0] + self.width, self.top_left[1])
+
 class BSPNode:
     """
     Implements node for the binary space partitioning tree, used for generating video game maps
 
     Attributes:
-        space (pygame.Rect): the total area that the node covers on the map
+        space (Rect): the total area that the node covers on the map
         left (BSPNode|None): a pointer to the left child node 
         right (BSPNode|None): a pointer to the right child node
+        room (Rect): the playable area within the space of the node
     """
 
-    def __init__(self, space: pygame.Rect, left: BSPNode|None = None, right: BSPNode|None = None):
+    def __init__(self, space: Rect):
         self.space = space
-        self.left = left
-        self.right = right
+        self.left = None
+        self.right = None
         self.room = None
 
     def split(self, direction: int, offset: float) -> None:
@@ -32,46 +53,50 @@ class BSPNode:
         """
         # Vertical split
         if direction == 0:
-            left_area = self.space.scale_by(offset, 1)
-
-            left_space = pygame.Rect((self.space.topleft), (left_area.size))
-
-            # Compute right by subtraction rather than scaling to avoid float rounding errors
-            right_space = pygame.Rect((left_space.topright[0], left_space.topright[1]), 
-                                      (self.space.width - left_area.width, self.space.height))
-        # Horizontal split
+            left_space = Rect(self.space.top_left, int(self.space.width * offset), self.space.height)
+            right_space = Rect(left_space.top_right, self.space.width - left_space.width, self.space.height)
+        # Horizontal split 
         else:
-            left_area = self.space.scale_by(1, offset)
+            left_space = Rect(self.space.top_left, self.space.width, int(self.space.height * offset))
+            right_space = Rect(left_space.bottom_left, self.space.width, self.space.height - left_space.height)
 
-            left_space = pygame.Rect((self.space.topleft), (left_area.size))
-            right_space = pygame.Rect((left_space.bottomleft[0], left_space.bottomleft[1]),
-                                       (self.space.width, self.space.height - left_area.height))
-
-        # Initialize children
+        # Initialize child nodes
         self.left = BSPNode(left_space)
         self.right = BSPNode(right_space)
 
-    def generate_room(self, min_area_coverage: float = .50):
-        # (Refactor Later) Not random enough
-        if self.right or self.left:
-            return
+    def write_to_grid(self, grid: list[list[int]]) -> None:
+        for i in range(len(grid)):
+            for j in range(len(grid[i])):
+                if (j == self.space.top_left[0] or j == self.space.top_left[0] + self.space.width - 1) and (self.space.top_left[1] <= i <= self.space.top_left[1] + self.space.height - 1):
+                    grid[i][j] = 0
 
-        self.room = self.space.copy()
+                if (i == self.space.top_left[1] or i == self.space.top_left[1] + self.space.height - 1) and (self.space.top_left[0] <= j <= self.space.top_left[0] + self.space.width - 1):
+                    grid[i][j] = 0
 
-        # Scale down?
-        scale_x = random.uniform(0.4, 0.9)
-        scale_y = random.uniform(0.4, 0.9)
-        self.room.scale_by_ip(scale_x, scale_y)
+    # # (Refactor Later) Not random enough
+    # def generate_room(self, min_area_coverage: float = .50):
+        
+    #     if self.right or self.left:
+    #         return
 
-    
+    #     self.room = self.space.copy()
+
+    #     # Scale down?
+    #     scale_x = random.uniform(0.4, 0.9)
+    #     scale_y = random.uniform(0.4, 0.9)
+    #     self.room.scale_by_ip(scale_x, scale_y)
+
 
 class BSPTree:
     """
     Used to generate the tree structure using BSP Nodes
     """
 
+    def __init__(self, root: BSPNode):
+        self.root = root
+
     @staticmethod
-    def generate_tree(root: BSPNode, space_ratio: float = 1.75, min_size: int = 20, depth: int = 5) -> None:
+    def generate_tree(root, space_ratio: float = 1.75, min_size: int = 20, depth: int = 5) -> None:
         """
         Generates the tree recursively until the minimum size is exceeded or the target depth is reached
 
@@ -87,40 +112,40 @@ class BSPTree:
             return
         
         # Stop if either dimension is too small
-        if space.size[0] <= min_size or space.size[1] <= min_size:
+        if space.width <= min_size or space.height <= min_size:
             return
         
         # (REFACTOR LATER) Attempts to get a better split           
         for i in range(30):
 
             direction = random.choice([0, 1])
-            offset =  random.uniform(0.35, 0.65)
+            offset = random.uniform(0.35, 0.65)
             root.split(direction, offset)
 
-            left_size = root.left.space.size
-            right_size = root.right.space.size
+            left_space = root.left.space
+            right_space = root.right.space
 
-            l_ratio = max(left_size[0] / left_size[1], left_size[1] / left_size[0])
-            r_ratio = max(right_size[0] / right_size[1], right_size[1] / right_size[0])
-
+            l_ratio = max(left_space.width / left_space.height, left_space.height / left_space.width)
+            r_ratio = max(right_space.width / right_space.height, right_space.height / right_space.width)
 
             if (l_ratio <= space_ratio and r_ratio <= space_ratio):
                 break
 
+        # Generate tree from left and right nodes
         BSPTree.generate_tree(root.left, space_ratio, min_size, depth - 1)
         BSPTree.generate_tree(root.right, space_ratio, min_size, depth - 1)
 
-    def get_leaves(root: BSPNode) -> list[BSPNode]:
+    def get_leaves(self) -> list[BSPNode]:
         """
-        This traverses the tree
+        Gets leaf nodes of the tree
 
         Args:
-            root (BSPNode): the root node of the tree to traverse
+            root (BSPNode): the root node of the tree to get leaves from
         
         Returns:
-            (list[BSPNode]): List of all of the nodes in the tree
+            (list[BSPNode]): List of all of the leaves in the tree
         """
-        stack = [root]
+        stack = [self.root]
         output = []
 
         while stack:
@@ -135,6 +160,10 @@ class BSPTree:
                 stack.append(node.left)
 
         return output
+    
+    def write_to_grid(self, grid: list[list[int]]):
+        for leaf in self.get_leaves():
+            leaf.write_to_grid(grid)
     
     def get_neighbors():
         pass
