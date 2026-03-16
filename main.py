@@ -11,10 +11,13 @@ from world import World
 world = World(64, 36)
 initial_space = Rect((1, 1), 62, 34)
 tree = BSPTree(BSPNode(initial_space))
-BSPTree.generate_tree(tree.root, 2, 0, 4)
+#BSPTree.generate_tree(tree, 2, (0, 0), 4)
 
-tree.write_to_grid(world.grid)
-print(world)
+for _ in range(5):
+    BSPTree.generate_next_level(tree, 2, (0, 0))
+    tree.write_to_grid(world.grid)
+    input()
+    print(world)
 
 # space = pygame.Rect((width // 2) - 600, (height // 2) - 320, 1200, 640)
 # initial_area = BSPNode(space)

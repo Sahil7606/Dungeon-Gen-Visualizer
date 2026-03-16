@@ -69,8 +69,7 @@ class BSPNode:
             for j in range(len(grid[i])):
                 if (j == self.space.top_left[0] or j == self.space.top_left[0] + self.space.width - 1) and (self.space.top_left[1] <= i <= self.space.top_left[1] + self.space.height - 1):
                     grid[i][j] = 0
-
-                if (i == self.space.top_left[1] or i == self.space.top_left[1] + self.space.height - 1) and (self.space.top_left[0] <= j <= self.space.top_left[0] + self.space.width - 1):
+                elif (i == self.space.top_left[1] or i == self.space.top_left[1] + self.space.height - 1) and (self.space.top_left[0] <= j <= self.space.top_left[0] + self.space.width - 1):
                     grid[i][j] = 0
 
     # # (Refactor Later) Not random enough
@@ -96,7 +95,36 @@ class BSPTree:
         self.root = root
 
     @staticmethod
-    def generate_tree(root, space_ratio: float = 1.75, min_size: int = 20, depth: int = 5) -> None:
+    def generate_next_level(tree, space_ratio: float = 1.75, min_size: tuple[int] = (20, 10)) -> None:
+        leaves = tree.get_leaves()
+
+        for leaf in leaves:
+            space = leaf.space
+
+            if space.width <= min_size[0] or space.height <= min_size[1]:
+                continue
+
+            # (REFACTOR LATER) Attempts to get a better split           
+            for i in range(30):
+
+                direction = random.choice([0, 1])
+                offset = random.uniform(0.35, 0.65)
+                leaf.split(direction, offset)
+
+                left_space = leaf.left.space
+                right_space = leaf.right.space
+
+                l_ratio = max(left_space.width / left_space.height, left_space.height / left_space.width)
+                r_ratio = max(right_space.width / right_space.height, right_space.height / right_space.width)
+
+                if (l_ratio <= space_ratio and r_ratio <= space_ratio):
+                    break
+
+        return
+
+
+    @staticmethod
+    def generate_tree(tree, space_ratio: float = 1.75, min_size: tuple[int] = (20, 10), depth: int = 5) -> None:
         """
         Generates the tree recursively until the minimum size is exceeded or the target depth is reached
 
@@ -106,34 +134,10 @@ class BSPTree:
             min_size (int): the minimum size that a child node can be
             depth (int): the desired amount of depth for the tree
         """
-        space = root.space
 
-        if depth == 0:
-            return
-        
-        # Stop if either dimension is too small
-        if space.width <= min_size or space.height <= min_size:
-            return
-        
-        # (REFACTOR LATER) Attempts to get a better split           
-        for i in range(30):
-
-            direction = random.choice([0, 1])
-            offset = random.uniform(0.35, 0.65)
-            root.split(direction, offset)
-
-            left_space = root.left.space
-            right_space = root.right.space
-
-            l_ratio = max(left_space.width / left_space.height, left_space.height / left_space.width)
-            r_ratio = max(right_space.width / right_space.height, right_space.height / right_space.width)
-
-            if (l_ratio <= space_ratio and r_ratio <= space_ratio):
-                break
-
-        # Generate tree from left and right nodes
-        BSPTree.generate_tree(root.left, space_ratio, min_size, depth - 1)
-        BSPTree.generate_tree(root.right, space_ratio, min_size, depth - 1)
+        for _ in range(depth):
+            BSPTree.generate_next_level(tree, space_ratio, min_size)
+            tree.write_to_grid()
 
     def get_leaves(self) -> list[BSPNode]:
         """
