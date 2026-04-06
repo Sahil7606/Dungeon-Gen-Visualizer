@@ -3,6 +3,8 @@ class World:
     Represents the map as a 2D integer grid.
 
     Attributes:
+        width (int): the width of the world
+        height (int): the height of the world
         grid (list[list[int]]): the 2D map grid where each integer represents a tile type
     """
 
@@ -14,7 +16,9 @@ class World:
             width (int): the width of the map in tiles
             height (int): the height of the map in tiles
         """
-        self.grid = [[1] * width for _ in range(height)]
+        self.width = width
+        self.height = height
+        self.grid = [[1] * self.width for _ in range(self.height)]
 
     def __repr__(self) -> str:
         """
@@ -36,5 +40,7 @@ class World:
             out += string + "\n"
 
         return out
-
+    
+    def clear_world(self) -> None:
+        self.grid = [[1] * self.width for _ in range(self.height)]
             
