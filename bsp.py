@@ -2,29 +2,90 @@ from __future__ import annotations
 import pygame
 import random
 
+# TODO: Create clear world function
 # TODO: Find node neighbors
 # TODO: Draw hallways
 # TODO: Connect into one polygon
 
-# NEXT: review and reorganize
 
 class Rect:
-    def __init__(self, top_left: tuple[int], width: int, height: int):
+    """
+    Represents a rectangular area on the map using a top-left coordinate, width, and height.
+
+    Attributes:
+        top_left (tuple[int]): the top-left coordinate of the rectangle as (x, y)
+        width (int): the width of the rectangle
+        height (int): the height of the rectangle
+    """
+
+    def __init__(self, top_left: tuple[int, int], width: int, height: int) -> None:
+        """
+        Initializes a rectangle.
+
+        Args:
+            top_left (tuple[int]): the top-left coordinate of the rectangle as (x, y)
+            width (int): the width of the rectangle
+            height (int): the height of the rectangle
+        """
         self.top_left = top_left
         self.width = width
         self.height = height
 
     @property
-    def bottom_right(self):
+    def bottom_right(self) -> tuple[int, int]:
+        """
+        Gets the bottom-right coordinate of the rectangle.
+
+        Returns:
+            (tuple[int]): the bottom-right coordinate as (x, y)
+        """
         return (self.top_left[0] + self.width, self.top_left[1] + self.height)
     
     @property
-    def bottom_left(self):
+    def bottom_left(self) -> tuple[int, int]:
+        """
+        Gets the bottom-left coordinate of the rectangle.
+
+        Returns:
+            (tuple[int]): the bottom-left coordinate as (x, y)
+        """
         return (self.top_left[0], self.top_left[1] + self.height)
     
     @property
-    def top_right(self):
+    def top_right(self) -> tuple[int, int]:
+        """
+        Gets the top-right coordinate of the rectangle.
+
+        Returns:
+            (tuple[int]): the top-right coordinate as (x, y)
+        """
         return (self.top_left[0] + self.width, self.top_left[1])
+    
+    # Writes node to a 2D list of integers
+    def write_to_grid(self, grid: list[list[int]], filled: bool = False, value: int = 0) -> None:
+        """
+        Writes the node border into a 2D integer grid.
+
+        Args:
+            grid (list[list[int]]): the map grid to write the node boundaries to
+            filled (bool): if true it writes the whole area to the grid, if false it writes the perimeter
+            value (int): the number value that each cell of the rect will have on the grid
+        """
+        if not filled:
+            for i in range(len(grid)):
+                for j in range(len(grid[i])):
+                    if (j == self.top_left[0] or j == self.top_left[0] + self.width - 1) and (self.top_left[1] <= i <= self.top_left[1] + self.height - 1):
+                        grid[i][j] = value
+                    elif (i == self.top_left[1] or i == self.top_left[1] + self.height - 1) and (self.top_left[0] <= j <= self.top_left[0] + self.width - 1):
+                        grid[i][j] = value
+        else:
+            for i in range(len(grid)):
+                for j in range(len(grid[i])):
+                    if (self.top_left[0] <= j <= self.top_left[0] + self.width - 1) and (self.top_left[1] <= i <= self.top_left[1] + self.height - 1):
+                        grid[i][j] = value
+                    elif (self.top_left[1] <= i <= self.top_left[1] + self.height - 1) and (self.top_left[0] <= j <= self.top_left[0] + self.width - 1):
+                        grid[i][j] = value
+
 
 class BSPNode:
     """
@@ -37,7 +98,13 @@ class BSPNode:
         room (Rect): the playable area within the space of the node
     """
 
-    def __init__(self, space: Rect):
+    def __init__(self, space: Rect) -> None:
+        """
+        Initializes a BSP node with a space and no children.
+
+        Args:
+            space (Rect): the total area that the node covers on the map
+        """
         self.space = space
         self.left = None
         self.right = None
@@ -63,27 +130,25 @@ class BSPNode:
         # Initialize child nodes
         self.left = BSPNode(left_space)
         self.right = BSPNode(right_space)
+    
+    # (Refactor Later) Not random enough
+    def generate_room(self, min_area_coverage: float = .50) -> None:
+        """
+        Generates a room for the current space.
 
-    def write_to_grid(self, grid: list[list[int]]) -> None:
-        for i in range(len(grid)):
-            for j in range(len(grid[i])):
-                if (j == self.space.top_left[0] or j == self.space.top_left[0] + self.space.width - 1) and (self.space.top_left[1] <= i <= self.space.top_left[1] + self.space.height - 1):
-                    grid[i][j] = 0
-                elif (i == self.space.top_left[1] or i == self.space.top_left[1] + self.space.height - 1) and (self.space.top_left[0] <= j <= self.space.top_left[0] + self.space.width - 1):
-                    grid[i][j] = 0
-
-    # # (Refactor Later) Not random enough
-    # def generate_room(self, min_area_coverage: float = .50):
+        Args:
+            min_area_coverage (float): the minimum percentage of the node space the room should cover
+        """
+        space = self.space
         
-    #     if self.right or self.left:
-    #         return
+        # At minimum it will be roughly a quarter of the original area
+        room_width = random.randint(int(space.width / 2) + 1, space.width - 1)
+        room_height = random.randint(int(space.height / 2) + 1, space.height - 1)
 
-    #     self.room = self.space.copy()
+        top_left_x = random.randint(1, space.width - room_width) + space.top_left[0]
+        top_left_y = random.randint(1, space.height - room_height) + space.top_left[1]
 
-    #     # Scale down?
-    #     scale_x = random.uniform(0.4, 0.9)
-    #     scale_y = random.uniform(0.4, 0.9)
-    #     self.room.scale_by_ip(scale_x, scale_y)
+        self.room = Rect((top_left_x, top_left_y), room_width, room_height)
 
 
 class BSPTree:
@@ -91,11 +156,25 @@ class BSPTree:
     Used to generate the tree structure using BSP Nodes
     """
 
-    def __init__(self, root: BSPNode):
+    def __init__(self, root: BSPNode) -> None:
+        """
+        Initializes a BSP tree with a root node.
+
+        Args:
+            root (BSPNode): the root node of the tree
+        """
         self.root = root
 
     @staticmethod
-    def generate_next_level(tree, space_ratio: float = 1.75, min_size: tuple[int] = (20, 10)) -> None:
+    def generate_next_level(tree: BSPTree, space_ratio: float = 1.75, min_size: tuple[int, int] = (20, 10)) -> None:
+        """
+        Generates one additional level by splitting eligible leaf nodes.
+
+        Args:
+            tree (BSPTree): the tree whose leaves will be split
+            space_ratio (float): the max x:y size ratio allowed for children spaces
+            min_size (tuple[int]): the minimum width and height required to split
+        """
         leaves = tree.get_leaves()
 
         for leaf in leaves:
@@ -124,7 +203,7 @@ class BSPTree:
 
 
     @staticmethod
-    def generate_tree(tree, space_ratio: float = 1.75, min_size: tuple[int] = (20, 10), depth: int = 5) -> None:
+    def generate_tree(tree: BSPTree, space_ratio: float = 1.75, min_size: tuple[int, int] = (20, 10), depth: int = 5) -> None:
         """
         Generates the tree recursively until the minimum size is exceeded or the target depth is reached
 
@@ -137,7 +216,6 @@ class BSPTree:
 
         for _ in range(depth):
             BSPTree.generate_next_level(tree, space_ratio, min_size)
-            tree.write_to_grid()
 
     def get_leaves(self) -> list[BSPNode]:
         """
@@ -165,9 +243,18 @@ class BSPTree:
 
         return output
     
-    def write_to_grid(self, grid: list[list[int]]):
+    def write_to_grid(self, grid: list[list[int]]) -> None:
+        """
+        Writes all leaf node borders to a 2D integer grid.
+
+        Args:
+            grid (list[list[int]]): the map grid to write the tree boundaries to
+        """
         for leaf in self.get_leaves():
-            leaf.write_to_grid(grid)
+            leaf.space.write_to_grid(grid, False)
     
-    def get_neighbors():
+    def get_neighbors() -> None:
+        """
+        Placeholder for neighbor lookup between nodes.
+        """
         pass
