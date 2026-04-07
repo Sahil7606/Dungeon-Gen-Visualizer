@@ -2,10 +2,10 @@ from __future__ import annotations
 import pygame
 import random
 
-# TODO: Create clear world function
 # TODO: Find node neighbors
 # TODO: Draw hallways
 # TODO: Connect into one polygon
+# TODO: Optimize write_to_grid function
 
 
 class Rect:
@@ -64,7 +64,7 @@ class Rect:
     # Writes node to a 2D list of integers
     def write_to_grid(self, grid: list[list[int]], filled: bool = False, value: int = 0) -> None:
         """
-        Writes the node border into a 2D integer grid.
+        Writes the rectangle into a 2D integer grid.
 
         Args:
             grid (list[list[int]]): the map grid to write the node boundaries to
@@ -131,7 +131,6 @@ class BSPNode:
         self.left = BSPNode(left_space)
         self.right = BSPNode(right_space)
     
-    # (Refactor Later) Not random enough
     def generate_room(self, min_area_coverage: float = .50) -> None:
         """
         Generates a room for the current space.

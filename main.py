@@ -1,12 +1,6 @@
 # import sys, pygame
 from bsp import Rect, BSPNode, BSPTree
 from world import World
-# pygame.init()
-
-# # Initializes screen
-# size =  width, height = 1280, 720
-# screen = pygame.display.set_mode(size)
-# default_blue = (16, 38, 66)
 
 world = World(64, 36)
 initial_space = Rect((1, 1), 62, 34)
@@ -15,7 +9,7 @@ tree = BSPTree(BSPNode(initial_space))
 tree.write_to_grid(world.grid)
 print(world)
 
-for _ in range(5):
+for _ in range(3):
     BSPTree.generate_next_level(tree, 2, (0, 0))
     tree.write_to_grid(world.grid)
     input()
@@ -29,6 +23,15 @@ for leaf in tree.get_leaves():
     leaf.room.write_to_grid(world.grid, True)
 
 print(world)
+
+
+
+# pygame.init()
+
+# # Initializes screen
+# size =  width, height = 1280, 720
+# screen = pygame.display.set_mode(size)
+# default_blue = (16, 38, 66)
 
 
 # space = pygame.Rect((width // 2) - 600, (height // 2) - 320, 1200, 640)
