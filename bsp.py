@@ -7,6 +7,8 @@ import random
 # TODO: Connect into one polygon
 # TODO: Optimize write_to_grid function
 
+# Maybe later add more customization to room generation
+
 
 class Rect:
     """
@@ -131,12 +133,9 @@ class BSPNode:
         self.left = BSPNode(left_space)
         self.right = BSPNode(right_space)
     
-    def generate_room(self, min_area_coverage: float = .50) -> None:
+    def generate_room(self) -> None:
         """
         Generates a room for the current space.
-
-        Args:
-            min_area_coverage (float): the minimum percentage of the node space the room should cover
         """
         space = self.space
         
@@ -148,7 +147,6 @@ class BSPNode:
         top_left_y = random.randint(1, space.height - room_height) + space.top_left[1]
 
         self.room = Rect((top_left_x, top_left_y), room_width, room_height)
-
 
 class BSPTree:
     """
@@ -164,8 +162,7 @@ class BSPTree:
         """
         self.root = root
 
-    @staticmethod
-    def generate_next_level(tree: BSPTree, space_ratio: float = 1.75, min_size: tuple[int, int] = (20, 10)) -> None:
+    def generate_next_level(self, space_ratio: float = 1.75, min_size: tuple[int, int] = (20, 10)) -> None:
         """
         Generates one additional level by splitting eligible leaf nodes.
 
@@ -174,7 +171,7 @@ class BSPTree:
             space_ratio (float): the max x:y size ratio allowed for children spaces
             min_size (tuple[int]): the minimum width and height required to split
         """
-        leaves = tree.get_leaves()
+        leaves = self.get_leaves()
 
         for leaf in leaves:
             space = leaf.space
@@ -200,9 +197,7 @@ class BSPTree:
 
         return
 
-
-    @staticmethod
-    def generate_tree(tree: BSPTree, space_ratio: float = 1.75, min_size: tuple[int, int] = (20, 10), depth: int = 5) -> None:
+    def generate_tree(self, space_ratio: float = 1.75, min_size: tuple[int, int] = (20, 10), depth: int = 5) -> None:
         """
         Generates the tree recursively until the minimum size is exceeded or the target depth is reached
 
@@ -214,7 +209,7 @@ class BSPTree:
         """
 
         for _ in range(depth):
-            BSPTree.generate_next_level(tree, space_ratio, min_size)
+            self.generate_next_level(space_ratio, min_size)
 
     def get_leaves(self) -> list[BSPNode]:
         """
@@ -252,7 +247,7 @@ class BSPTree:
         for leaf in self.get_leaves():
             leaf.space.write_to_grid(grid, False)
     
-    def get_neighbors() -> None:
+    def get_neighbors(node: BSPNode) -> list[BSPNode]:
         """
         Placeholder for neighbor lookup between nodes.
         """

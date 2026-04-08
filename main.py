@@ -10,7 +10,7 @@ tree.write_to_grid(world.grid)
 print(world)
 
 for _ in range(3):
-    BSPTree.generate_next_level(tree, 2, (0, 0))
+    tree.generate_next_level(2, (0, 0))
     tree.write_to_grid(world.grid)
     input()
     print(world)
