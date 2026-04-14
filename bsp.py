@@ -2,6 +2,7 @@ from __future__ import annotations
 import pygame
 import random
 
+# TODO: Implement function get_nodes_on_line(pos, direction)
 # TODO: Find node neighbors
 # TODO: Draw hallways
 # TODO: Connect into one polygon
@@ -251,4 +252,10 @@ class BSPTree:
         """
         Placeholder for neighbor lookup between nodes.
         """
+        # Maybe I can implement this by checking if the nodes have adjacent points on one edge, which means that they would be next to each other. 
+        # Instead of getting every neighbor, I just need the bottom and right neighbors. This avoids double-connections in the final result.
+
+        # Or instead of doing that maybe I can connect spaces using a dfs-style algorithm (This is the traditional method)
+            # Connect rooms in sibling subtrees use a line to detect rooms along a certain axis
+        
         pass
