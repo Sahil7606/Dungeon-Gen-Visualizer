@@ -113,7 +113,9 @@ class BSPNode:
         self.right = None
         self.room = None
 
-    def split(self, direction: int, offset: float) -> None:
+        self.split_direction = None
+
+    def split(self, direction: chr, offset: float) -> None:
         """
         Used to split node area (space attribute) into two sub-spaces to be stored in the left and right child nodes
 
@@ -122,7 +124,7 @@ class BSPNode:
             offset (float): a decimal value that decides where the split will be made. Ex) .60 -> one half will be 60% of the area and the other will be 40%
         """
         # Vertical split
-        if direction == 0:
+        if direction == 'y':
             left_space = Rect(self.space.top_left, int(self.space.width * offset), self.space.height)
             right_space = Rect(left_space.top_right, self.space.width - left_space.width, self.space.height)
         # Horizontal split 
@@ -133,6 +135,8 @@ class BSPNode:
         # Initialize child nodes
         self.left = BSPNode(left_space)
         self.right = BSPNode(right_space)
+
+        self.split_direction = direction
     
     def generate_room(self) -> None:
         """
@@ -183,13 +187,14 @@ class BSPTree:
             # (REFACTOR LATER) Attempts to get a better split           
             for i in range(30):
 
-                direction = random.choice([0, 1])
+                direction = random.choice(['x', 'y'])
                 offset = random.uniform(0.35, 0.65)
                 leaf.split(direction, offset)
 
                 left_space = leaf.left.space
                 right_space = leaf.right.space
 
+                # Causes divide by zero error for small areas
                 l_ratio = max(left_space.width / left_space.height, left_space.height / left_space.width)
                 r_ratio = max(right_space.width / right_space.height, right_space.height / right_space.width)
 
@@ -248,14 +253,5 @@ class BSPTree:
         for leaf in self.get_leaves():
             leaf.space.write_to_grid(grid, False)
     
-    def get_neighbors(node: BSPNode) -> list[BSPNode]:
-        """
-        Placeholder for neighbor lookup between nodes.
-        """
-        # Maybe I can implement this by checking if the nodes have adjacent points on one edge, which means that they would be next to each other. 
-        # Instead of getting every neighbor, I just need the bottom and right neighbors. This avoids double-connections in the final result.
-
-        # Or instead of doing that maybe I can connect spaces using a dfs-style algorithm (This is the traditional method)
-            # Connect rooms in sibling subtrees use a line to detect rooms along a certain axis
-        
+    def get_nodes_on_line(self, direction: int, origin: int, use_full_area: bool = True) -> list[BSPNode]:
         pass
