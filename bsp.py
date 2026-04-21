@@ -89,7 +89,6 @@ class Rect:
                     elif (self.top_left[1] <= i <= self.top_left[1] + self.height - 1) and (self.top_left[0] <= j <= self.top_left[0] + self.width - 1):
                         grid[i][j] = value
 
-
 class BSPNode:
     """
     Implements node for the binary space partitioning tree, used for generating video game maps
@@ -191,6 +190,8 @@ class BSPTree:
                 offset = random.uniform(0.35, 0.65)
                 leaf.split(direction, offset)
 
+                leaf.split_direction = direction
+
                 left_space = leaf.left.space
                 right_space = leaf.right.space
 
@@ -253,5 +254,18 @@ class BSPTree:
         for leaf in self.get_leaves():
             leaf.space.write_to_grid(grid, False)
     
-    def get_nodes_on_line(self, direction: int, origin: int, use_full_area: bool = True) -> list[BSPNode]:
-        pass
+    def get_nodes_on_line(self, direction: int, origin: int, start_node: BSPNode = None, use_full_area: bool = True) -> list[BSPNode]:
+        if not start_node:
+            start_node = self.root
+
+        # Checks if origin is out of bounds of the node
+        if (direction == 'x' and origin > start_node.space.height) or (direction == 'y' and origin > start_node.space.width):
+            return []
+        
+        # Shifts origin to be with respect to the node
+        if (direction == 'x'):
+            origin += start_node.space.top_left[1]
+        else:
+            origin += start_node.space.top_left[0]
+
+        # Recurse through subtrees, can be more efficient by checking if line is in split_dir then searching the half it is in.
