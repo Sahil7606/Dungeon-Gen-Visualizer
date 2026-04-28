@@ -1,6 +1,7 @@
 # import sys, pygame
 from bsp import Rect, BSPNode, BSPTree
 from world import World
+import random
 
 world = World(64, 36)
 initial_space = Rect((1, 1), 62, 34)
@@ -9,7 +10,7 @@ tree = BSPTree(BSPNode(initial_space))
 tree.write_to_grid(world.grid)
 print(world)
 
-for _ in range(3):
+for _ in range(4):
     tree.generate_next_level(2, (0, 0))
     tree.write_to_grid(world.grid)
     input()

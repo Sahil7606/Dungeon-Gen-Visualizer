@@ -2,7 +2,6 @@ from __future__ import annotations
 import pygame
 import random
 
-# TODO: Implement function get_nodes_on_line(pos, direction)
 # TODO: Find node neighbors
 # TODO: Draw hallways
 # TODO: Connect into one polygon
@@ -89,6 +88,13 @@ class Rect:
                     elif (self.top_left[1] <= i <= self.top_left[1] + self.height - 1) and (self.top_left[0] <= j <= self.top_left[0] + self.width - 1):
                         grid[i][j] = value
 
+    def contains_line(self, direction: chr, origin: int) -> bool:
+        if (direction == 'x'):
+            return (self.top_left[1] <= origin < self.bottom_left[1])
+        else:
+            return (self.top_left[0] <= origin < self.top_right[0])
+
+
 class BSPNode:
     """
     Implements node for the binary space partitioning tree, used for generating video game maps
@@ -114,6 +120,10 @@ class BSPNode:
 
         self.split_direction = None
 
+    @property
+    def is_leaf(self) -> bool:
+        return not (self.left or self.right)
+    
     def split(self, direction: chr, offset: float) -> None:
         """
         Used to split node area (space attribute) into two sub-spaces to be stored in the left and right child nodes
@@ -152,6 +162,28 @@ class BSPNode:
 
         self.room = Rect((top_left_x, top_left_y), room_width, room_height)
 
+    def get_leaves_on_line(self, direction: chr, origin: int, use_full_area: bool = True) -> list[BSPNode]:
+        if not self.space.contains_line(direction, origin):
+            return []
+        
+        out = []
+        
+        if not use_full_area and self.is_leaf:
+            space = self.room
+        else:
+            space = self.space
+
+        if self.is_leaf and space.contains_line(direction, origin):
+            return [self]
+
+        if (self.left.space.contains_line(direction, origin)):
+            out += self.left.get_leaves_on_line(direction, origin, use_full_area)
+        if (self.right.space.contains_line(direction, origin)):
+            out += self.right.get_leaves_on_line(direction, origin, use_full_area)
+
+        return out
+
+            
 class BSPTree:
     """
     Used to generate the tree structure using BSP Nodes
@@ -234,7 +266,7 @@ class BSPTree:
         while stack:
             node = stack.pop()
             
-            if not node.left and not node.right:
+            if node.is_leaf:
                 output.append(node)
 
             if node.right:
@@ -254,18 +286,3 @@ class BSPTree:
         for leaf in self.get_leaves():
             leaf.space.write_to_grid(grid, False)
     
-    def get_nodes_on_line(self, direction: int, origin: int, start_node: BSPNode = None, use_full_area: bool = True) -> list[BSPNode]:
-        if not start_node:
-            start_node = self.root
-
-        # Checks if origin is out of bounds of the node
-        if (direction == 'x' and origin > start_node.space.height) or (direction == 'y' and origin > start_node.space.width):
-            return []
-        
-        # Shifts origin to be with respect to the node
-        if (direction == 'x'):
-            origin += start_node.space.top_left[1]
-        else:
-            origin += start_node.space.top_left[0]
-
-        # Recurse through subtrees, can be more efficient by checking if line is in split_dir then searching the half it is in.
