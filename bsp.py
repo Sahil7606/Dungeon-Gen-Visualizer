@@ -1,4 +1,5 @@
 from __future__ import annotations
+from enum import Enum
 import pygame
 import random
 
@@ -8,6 +9,10 @@ import random
 # TODO: Optimize write_to_grid function
 
 # Maybe later add more customization to room generation
+
+class Direction(Enum):
+    X = "x"
+    Y = "y"
 
 
 class Rect:
@@ -63,6 +68,29 @@ class Rect:
         """
         return (self.top_left[0] + self.width, self.top_left[1])
     
+    @staticmethod
+    def __overlaps(a_min: int, a_max: int, b_min: int, b_max: int) -> bool:
+        return max(a_min, b_min) < min(a_max, b_max)
+    
+    @staticmethod
+    def adjacency(a: Rect, b: Rect) -> str | None:
+        ax1, ay1 = a.top_left
+        ax2, ay2 = a.bottom_right
+
+        bx1, by1 = b.top_left
+        bx2, by2 = b.bottom_right
+
+        if ax2 == bx1 and __overlaps(ay1, ay2, by1, by2):
+            return "right"
+        if bx2 == ax1 and __overlaps(ay1, ay2, by1, by2):
+            return "left"
+        if ay2 == by1 and __overlaps(ax1, ax2, bx1, bx2):
+            return "bottom"
+        if by2 == ay1 and __overlaps(ax1, ax2, bx1, bx2):
+            return "top"
+
+        return None
+    
     # Writes node to a 2D list of integers
     def write_to_grid(self, grid: list[list[int]], filled: bool = False, value: int = 0) -> None:
         """
@@ -88,8 +116,8 @@ class Rect:
                     elif (self.top_left[1] <= i <= self.top_left[1] + self.height - 1) and (self.top_left[0] <= j <= self.top_left[0] + self.width - 1):
                         grid[i][j] = value
 
-    def contains_line(self, direction: chr, origin: int) -> bool:
-        if (direction == 'x'):
+    def contains_line(self, direction: Direction, origin: int) -> bool:
+        if direction == Direction.X:
             return (self.top_left[1] <= origin < self.bottom_left[1])
         else:
             return (self.top_left[0] <= origin < self.top_right[0])
@@ -114,17 +142,38 @@ class BSPNode:
             space (Rect): the total area that the node covers on the map
         """
         self.space = space
+        self.parent = None
         self.left = None
         self.right = None
         self.room = None
 
         self.split_direction = None
 
+        
+    def __contains__(self, node: BSPNode):
+        if self == node:
+            return True
+        
+        stack = [self]
+
+        while stack:
+            current = stack.pop()
+
+            if current.left == node or current.right == node:
+                return True
+
+            if current.left:
+                stack.append(current.left)
+            if current.right:
+                stack.append(current.right)
+
+        return False      
+
     @property
     def is_leaf(self) -> bool:
         return not (self.left or self.right)
     
-    def split(self, direction: chr, offset: float) -> None:
+    def split(self, direction: Direction, offset: float) -> None:
         """
         Used to split node area (space attribute) into two sub-spaces to be stored in the left and right child nodes
 
@@ -133,7 +182,7 @@ class BSPNode:
             offset (float): a decimal value that decides where the split will be made. Ex) .60 -> one half will be 60% of the area and the other will be 40%
         """
         # Vertical split
-        if direction == 'y':
+        if direction == Direction.Y:
             left_space = Rect(self.space.top_left, int(self.space.width * offset), self.space.height)
             right_space = Rect(left_space.top_right, self.space.width - left_space.width, self.space.height)
         # Horizontal split 
@@ -144,6 +193,10 @@ class BSPNode:
         # Initialize child nodes
         self.left = BSPNode(left_space)
         self.right = BSPNode(right_space)
+
+        # Set parent to self
+        self.left.parent = self
+        self.right.parent = self
 
         self.split_direction = direction
     
@@ -162,7 +215,7 @@ class BSPNode:
 
         self.room = Rect((top_left_x, top_left_y), room_width, room_height)
 
-    def get_leaves_on_line(self, direction: chr, origin: int, use_full_area: bool = True) -> list[BSPNode]:
+    def get_leaves_on_line(self, direction: Direction, origin: int, use_full_area: bool = True) -> list[BSPNode]:
         if not self.space.contains_line(direction, origin):
             return []
         
@@ -183,7 +236,17 @@ class BSPNode:
 
         return out
 
-            
+    def connect_children(self, direction: Direction, origin: int):
+        for i in range(30):
+            pass
+        # Choose a random line (going against split_dir) that goes through the node
+
+        # If there is a leaf in self.left and a leaf in self.right in the list that are adjacent, connect them
+
+        # If not, then do it then choose another line
+        pass
+        
+
 class BSPTree:
     """
     Used to generate the tree structure using BSP Nodes
@@ -218,7 +281,7 @@ class BSPTree:
             # (REFACTOR LATER) Attempts to get a better split           
             for i in range(30):
 
-                direction = random.choice(['x', 'y'])
+                direction = random.choice([Direction.X, Direction.Y])
                 offset = random.uniform(0.35, 0.65)
                 leaf.split(direction, offset)
 
