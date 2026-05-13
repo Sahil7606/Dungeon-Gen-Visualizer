@@ -27,19 +27,25 @@ class World:
         Returns:
             (str): a line-by-line string view of the world grid
         """
-        out = ""
+        if not self.grid:
+            return ""
 
-        for row in self.grid:
-            string = ""
+        cell_width = max(
+            1,
+            max(len(str(cell)) for row in self.grid for cell in row),
+        )
+        row_label_sep = " | "
+        out_lines = []
+
+        for row_index, row in enumerate(self.grid):
+            cells = []
             for cell in row:
-                if cell == 1:
-                    string += "  "
-                else:
-                    string += (str(cell) + " ")
+                cell_text = "-" if cell == 1 else str(cell)
+                cells.append(cell_text.rjust(cell_width))
+            out_lines.append(" ".join(cells) + f"{row_label_sep}{row_index}")
 
-            out += string + "\n"
 
-        return out
+        return "\n".join(out_lines)
     
     def clear_world(self) -> None:
         self.grid = [[1] * self.width for _ in range(self.height)]

@@ -3,15 +3,15 @@ from bsp import Rect, BSPNode, BSPTree
 from world import World
 import random
 
-world = World(64, 36)
-initial_space = Rect((1, 1), 62, 34)
+world = World(62, 36)
+initial_space = Rect((1, 1), 60, 34)
 tree = BSPTree(BSPNode(initial_space))
 
 tree.write_to_grid(world.grid)
 print(world)
 
 for _ in range(4):
-    tree.generate_next_level(2, (0, 0))
+    tree.generate_next_level(2, (8, 5))
     tree.write_to_grid(world.grid)
     input()
     print(world)
@@ -19,12 +19,17 @@ for _ in range(4):
 world.clear_world()
 input()
 
-for leaf in tree.get_leaves():
+# Generate rooms
+for leaf in tree.leaves:
     leaf.generate_room()
-    leaf.room.write_to_grid(world.grid, True)
 
+tree.write_to_grid(world.grid, True)
 print(world)
 
+tree.generate_hallways()
+tree.write_to_grid(world.grid, True, True)
+
+print(world)
 
 
 # pygame.init()

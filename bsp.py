@@ -46,7 +46,7 @@ class Rect:
         Returns:
             (tuple[int]): the bottom-right coordinate as (x, y)
         """
-        return (self.top_left[0] + self.width, self.top_left[1] + self.height)
+        return (self.top_left[0] + self.width - 1, self.top_left[1] + self.height - 1)
     
     @property
     def bottom_left(self) -> tuple[int, int]:
@@ -56,7 +56,7 @@ class Rect:
         Returns:
             (tuple[int]): the bottom-left coordinate as (x, y)
         """
-        return (self.top_left[0], self.top_left[1] + self.height)
+        return (self.top_left[0], self.top_left[1] + self.height - 1)
     
     @property
     def top_right(self) -> tuple[int, int]:
@@ -66,27 +66,33 @@ class Rect:
         Returns:
             (tuple[int]): the top-right coordinate as (x, y)
         """
-        return (self.top_left[0] + self.width, self.top_left[1])
+        return (self.top_left[0] + self.width - 1, self.top_left[1])
+
+    def __contains__(self, point: tuple[int, int]) -> bool:
+        x, y = point
+        return (self.top_left[0] <= x <= self.bottom_right[0]) and (self.top_left[1] <= y <= self.bottom_right[1])
     
     @staticmethod
     def __overlaps(a_min: int, a_max: int, b_min: int, b_max: int) -> bool:
-        return max(a_min, b_min) < min(a_max, b_max)
+        return max(a_min, b_min) <= min(a_max, b_max)
     
-    @staticmethod
-    def adjacency(a: Rect, b: Rect) -> str | None:
-        ax1, ay1 = a.top_left
-        ax2, ay2 = a.bottom_right
+    def adjacency(self, node: Rect | None) -> str | None:
+        if not node:
+            return None
+        
+        ax1, ay1 = self.top_left
+        ax2, ay2 = self.bottom_right
 
-        bx1, by1 = b.top_left
-        bx2, by2 = b.bottom_right
+        bx1, by1 = node.top_left
+        bx2, by2 = node.bottom_right
 
-        if ax2 == bx1 and __overlaps(ay1, ay2, by1, by2):
+        if ax2 + 1 == bx1 and Rect.__overlaps(ay1, ay2, by1, by2):
             return "right"
-        if bx2 == ax1 and __overlaps(ay1, ay2, by1, by2):
+        if bx2 + 1 == ax1 and Rect.__overlaps(ay1, ay2, by1, by2):
             return "left"
-        if ay2 == by1 and __overlaps(ax1, ax2, bx1, bx2):
+        if ay2 + 1 == by1 and Rect.__overlaps(ax1, ax2, bx1, bx2):
             return "bottom"
-        if by2 == ay1 and __overlaps(ax1, ax2, bx1, bx2):
+        if by2 + 1 == ay1 and Rect.__overlaps(ax1, ax2, bx1, bx2):
             return "top"
 
         return None
@@ -118,9 +124,9 @@ class Rect:
 
     def contains_line(self, direction: Direction, origin: int) -> bool:
         if direction == Direction.X:
-            return (self.top_left[1] <= origin < self.bottom_left[1])
+            return (self.top_left[1] <= origin <= self.bottom_left[1])
         else:
-            return (self.top_left[0] <= origin < self.top_right[0])
+            return (self.top_left[0] <= origin <= self.top_right[0])
 
 
 class BSPNode:
@@ -149,7 +155,6 @@ class BSPNode:
 
         self.split_direction = None
 
-        
     def __contains__(self, node: BSPNode):
         if self == node:
             return True
@@ -175,20 +180,20 @@ class BSPNode:
     
     def split(self, direction: Direction, offset: float) -> None:
         """
-        Used to split node area (space attribute) into two sub-spaces to be stored in the left and right child nodes
+        Used to split node area (space attribute) into two sub-spaces to be stored in the left and right child nodes (preserves original size)
 
         Args:
             direction (int): determines whether the area is split horizontally (1) or vertically (0)
             offset (float): a decimal value that decides where the split will be made. Ex) .60 -> one half will be 60% of the area and the other will be 40%
         """
-        # Vertical split
+        # Vertical split, splits into left and right nodes
         if direction == Direction.Y:
             left_space = Rect(self.space.top_left, int(self.space.width * offset), self.space.height)
-            right_space = Rect(left_space.top_right, self.space.width - left_space.width, self.space.height)
-        # Horizontal split 
+            right_space = Rect((left_space.top_right[0] + 1, left_space.top_right[1]), self.space.width - left_space.width, self.space.height)
+        # Horizontal split, splits into top and bottom nodes
         else:
             left_space = Rect(self.space.top_left, self.space.width, int(self.space.height * offset))
-            right_space = Rect(left_space.bottom_left, self.space.width, self.space.height - left_space.height)
+            right_space = Rect((left_space.bottom_left[0], left_space.bottom_left[1] + 1), self.space.width, self.space.height - left_space.height)
 
         # Initialize child nodes
         self.left = BSPNode(left_space)
@@ -200,18 +205,18 @@ class BSPNode:
 
         self.split_direction = direction
     
-    def generate_room(self) -> None:
+    def generate_room(self) -> None: # Top-left overlapping
         """
         Generates a room for the current space.
         """
         space = self.space
         
         # At minimum it will be roughly a quarter of the original area
-        room_width = random.randint(int(space.width / 2) + 1, space.width - 1)
-        room_height = random.randint(int(space.height / 2) + 1, space.height - 1)
+        room_width = random.randint(int(space.width / 2), space.width - 1)
+        room_height = random.randint(int(space.height / 2), space.height - 1)
 
-        top_left_x = random.randint(1, space.width - room_width) + space.top_left[0]
-        top_left_y = random.randint(1, space.height - room_height) + space.top_left[1]
+        top_left_x = random.randint(0, space.width - room_width - 1) + space.top_left[0]
+        top_left_y = random.randint(0, space.height - room_height - 1) + space.top_left[1]
 
         self.room = Rect((top_left_x, top_left_y), room_width, room_height)
 
@@ -235,18 +240,45 @@ class BSPNode:
             out += self.right.get_leaves_on_line(direction, origin, use_full_area)
 
         return out
-
-    def connect_children(self, direction: Direction, origin: int):
-        for i in range(30):
-            pass
-        # Choose a random line (going against split_dir) that goes through the node
-
-        # If there is a leaf in self.left and a leaf in self.right in the list that are adjacent, connect them
-
-        # If not, then do it then choose another line
-        pass
         
 
+class Hallway:
+    def __init__(self, start: Rect, end: Rect, direction: Direction):
+        # Should be rooms not full node areas
+        self.start = start
+        self.end = end
+        
+        self.direction = direction
+
+        self.area = None
+
+    def connect(self):
+        while True:
+            if self.direction == Direction.X:
+                origin = random.randint(self.start.top_left[1] + 1, self.start.bottom_left[1] - 1)
+            else:
+                origin = random.randint(self.start.top_left[0] + 1, self.start.top_right[0] - 1)
+
+            if self.end.contains_line(self.direction, origin):
+                break
+
+        # Adjust for hallway width (2) if needed and get hallway length
+        if self.direction == Direction.X:
+            if origin == self.end.bottom_left[1]:
+                origin += 1
+            
+            distance = (self.end.top_left[0] - self.start.top_right[0]) - 1
+
+            self.area = Rect((self.start.top_right[0] + 1, origin), distance, 2)
+        else:
+            if origin == self.end.top_right[0]:
+                origin -= 1
+
+            distance = (self.end.top_left[1] - self.start.bottom_left[1]) - 1
+
+            self.area = Rect((origin, self.start.bottom_left[1] + 1), 2, distance)
+
+        
 class BSPTree:
     """
     Used to generate the tree structure using BSP Nodes
@@ -260,6 +292,8 @@ class BSPTree:
             root (BSPNode): the root node of the tree
         """
         self.root = root
+        self.leaves = [root]
+        self.hallways = []
 
     def generate_next_level(self, space_ratio: float = 1.75, min_size: tuple[int, int] = (20, 10)) -> None:
         """
@@ -270,9 +304,8 @@ class BSPTree:
             space_ratio (float): the max x:y size ratio allowed for children spaces
             min_size (tuple[int]): the minimum width and height required to split
         """
-        leaves = self.get_leaves()
 
-        for leaf in leaves:
+        for leaf in self.leaves:
             space = leaf.space
 
             if space.width <= min_size[0] or space.height <= min_size[1]:
@@ -297,6 +330,7 @@ class BSPTree:
                 if (l_ratio <= space_ratio and r_ratio <= space_ratio):
                     break
 
+        self.set_leaves()
         return
 
     def generate_tree(self, space_ratio: float = 1.75, min_size: tuple[int, int] = (20, 10), depth: int = 5) -> None:
@@ -313,15 +347,75 @@ class BSPTree:
         for _ in range(depth):
             self.generate_next_level(space_ratio, min_size)
 
-    def get_leaves(self) -> list[BSPNode]:
+    def get_neighbor_leaves(self, node: BSPNode) -> list[BSPNode]|None:
+        if not node.is_leaf:
+            return None
+        
+        out = []
+        bottom_leaves = []
+        right_leaves = []
+
+        # If the node is a left child, its sibling will always be bottom or right node
+        if node == node.parent.left:
+            if node.space.adjacency(node.parent.right.space) == "right":
+                right_leaves.append(node.parent.right)
+            else:
+                bottom_leaves.append(node.parent.right)
+
+        # Get bottom leaves
+        if not bottom_leaves:
+            for leaf in self.leaves:
+                if node == leaf or node.parent.right == leaf:
+                    continue
+
+                if node.space.adjacency(leaf.space) == "bottom":
+                    bottom_leaves.append(leaf)
+
+        # Get right leaves
+        if not right_leaves:
+            for leaf in self.leaves:
+                if node == leaf or node.parent.right == leaf:
+                    continue
+
+                if node.space.adjacency(leaf.space) == "right":
+                    right_leaves.append(leaf)
+
+        # If there is more than one node on either side, select the more central
+        if len(right_leaves) > 1:
+            right_ref_point = (node.space.top_right[0] + 1, node.space.top_right[1] + int(node.space.height / 2))
+            for leaf in right_leaves:
+                if right_ref_point not in leaf.space:
+                    right_leaves.remove(leaf)
+
+        if len(bottom_leaves) > 1:
+            bottom_ref_point = (node.space.bottom_left[0] + int(node.space.width / 2), node.space.bottom_left[1] + 1)
+            for leaf in bottom_leaves:
+                if bottom_ref_point not in leaf.space:
+                    bottom_leaves.remove(leaf)
+
+        out = bottom_leaves + right_leaves
+
+        if len(out) < 2:
+            out.append(None)
+
+        return out
+
+    def __get_connections(self) -> dict[BSPNode, BSPNode|None]:
+        connections = {}
+
+        for leaf in self.leaves:
+            neighbors = self.get_neighbor_leaves(leaf)
+            connections[leaf] = random.choice(neighbors)
+        
+        return connections
+
+    def set_leaves(self):
         """
-        Gets leaf nodes of the tree
+        Sets leaves property
 
         Args:
             root (BSPNode): the root node of the tree to get leaves from
-        
-        Returns:
-            (list[BSPNode]): List of all of the leaves in the tree
+
         """
         stack = [self.root]
         output = []
@@ -337,15 +431,42 @@ class BSPTree:
             if node.left:
                 stack.append(node.left)
 
-        return output
+        self.leaves = output
     
-    def write_to_grid(self, grid: list[list[int]]) -> None:
+    def generate_hallways(self):
+        connections = self.__get_connections()
+
+        for start, end in connections.items():
+            if end == None:
+                continue
+
+            if start.space.adjacency(end.space) == "bottom":
+                hallway = Hallway(start.room, end.room, Direction.Y)
+            else:
+                hallway = Hallway(start.room, end.room, Direction.X)
+
+            hallway.connect()
+            self.hallways.append(hallway)
+
+    def write_to_grid(self, grid: list[list[int]], use_rooms: bool = False, draw_hallways: bool = False) -> None:
         """
         Writes all leaf node borders to a 2D integer grid.
 
         Args:
             grid (list[list[int]]): the map grid to write the tree boundaries to
         """
-        for leaf in self.get_leaves():
-            leaf.space.write_to_grid(grid, False)
+        if not use_rooms:
+            for leaf in self.leaves:
+                leaf.space.write_to_grid(grid, False)
+        else:
+            for leaf in self.leaves:
+                if leaf.room:
+                    leaf.room.write_to_grid(grid, True)
+
+        if draw_hallways and self.hallways:
+            for hallway in self.hallways:
+                hallway.area.write_to_grid(grid, True)
+
+            
+
     
