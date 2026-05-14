@@ -3,14 +3,14 @@ from bsp import Rect, BSPNode, BSPTree
 from world import World
 import random
 
-world = World(62, 36)
-initial_space = Rect((1, 1), 60, 34)
+world = World(192, 108)
+initial_space = Rect((1, 1), 190, 106)
 tree = BSPTree(BSPNode(initial_space))
 
 tree.write_to_grid(world.grid)
 print(world)
 
-for _ in range(4):
+for _ in range(7):
     tree.generate_next_level(2, (8, 5))
     tree.write_to_grid(world.grid)
     input()
@@ -26,10 +26,17 @@ for leaf in tree.leaves:
 tree.write_to_grid(world.grid, True)
 print(world)
 
-tree.generate_hallways()
+input()
+tree.generate_connection_clusters()
 tree.write_to_grid(world.grid, True, True)
-
 print(world)
+
+input()
+tree.connect_clusters()
+tree.write_to_grid(world.grid, True, True)
+print(world)
+
+print(len(tree.clusters[tree.leaves[0]]))
 
 
 # pygame.init()

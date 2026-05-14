@@ -253,21 +253,47 @@ class Hallway:
         self.area = None
 
     def connect(self):
-        while True:
+        line_found = False
+        origin = None
+
+        for _ in range(100):
+            # compute interior range for the start room depending on hallway direction
             if self.direction == Direction.X:
-                origin = random.randint(self.start.top_left[1] + 1, self.start.bottom_left[1] - 1)
+                low = self.start.top_left[1] + 1
+                high = self.start.bottom_left[1] - 1
             else:
-                origin = random.randint(self.start.top_left[0] + 1, self.start.top_right[0] - 1)
+                low = self.start.top_left[0] + 1
+                high = self.start.top_right[0] - 1
+
+            # if the interior range is empty (small room), fall back to full room range
+            if low > high:
+                if self.direction == Direction.X:
+                    low = self.start.top_left[1]
+                    high = self.start.bottom_left[1]
+                else:
+                    low = self.start.top_left[0]
+                    high = self.start.top_right[0]
+
+            origin = random.randint(low, high)
 
             if self.end.contains_line(self.direction, origin):
+                line_found = True
                 break
 
-        # Adjust for hallway width (2) if needed and get hallway length
+        if not line_found:
+            self.area = None
+            return
+
+        # Create Rect that connects start and end
         if self.direction == Direction.X:
+            # Shift origin to account for hallway width
             if origin == self.end.bottom_left[1]:
-                origin += 1
-            
+                origin -= 1
+
             distance = (self.end.top_left[0] - self.start.top_right[0]) - 1
+            if distance <= 0:
+                self.area = None
+                return
 
             self.area = Rect((self.start.top_right[0] + 1, origin), distance, 2)
         else:
@@ -275,6 +301,9 @@ class Hallway:
                 origin -= 1
 
             distance = (self.end.top_left[1] - self.start.bottom_left[1]) - 1
+            if distance <= 0:
+                self.area = None
+                return
 
             self.area = Rect((origin, self.start.bottom_left[1] + 1), 2, distance)
 
@@ -293,7 +322,10 @@ class BSPTree:
         """
         self.root = root
         self.leaves = [root]
+
+        self.neighbor_map = {}
         self.hallways = []
+        self.clusters = {}
 
     def generate_next_level(self, space_ratio: float = 1.75, min_size: tuple[int, int] = (20, 10)) -> None:
         """
@@ -400,14 +432,9 @@ class BSPTree:
 
         return out
 
-    def __get_connections(self) -> dict[BSPNode, BSPNode|None]:
-        connections = {}
-
+    def __set_neighbor_map(self):
         for leaf in self.leaves:
-            neighbors = self.get_neighbor_leaves(leaf)
-            connections[leaf] = random.choice(neighbors)
-        
-        return connections
+            self.neighbor_map[leaf] = self.get_neighbor_leaves(leaf)
 
     def set_leaves(self):
         """
@@ -433,10 +460,15 @@ class BSPTree:
 
         self.leaves = output
     
-    def generate_hallways(self):
-        connections = self.__get_connections()
+    def generate_connection_clusters(self):
+        self.__set_neighbor_map()
 
-        for start, end in connections.items():
+        for leaf in self.leaves:
+            self.clusters[leaf] = [leaf]
+
+        for start, end_candidates in self.neighbor_map.items():
+            end = random.choice(end_candidates)
+
             if end == None:
                 continue
 
@@ -446,7 +478,50 @@ class BSPTree:
                 hallway = Hallway(start.room, end.room, Direction.X)
 
             hallway.connect()
-            self.hallways.append(hallway)
+
+            # If there is a successful connection
+            if hallway.area:
+                # Append to list of hallways
+                self.hallways.append(hallway)
+
+                self.clusters[start].extend(self.clusters[end])
+                self.clusters[end] = self.clusters[start]
+
+                for node in self.clusters[start]:
+                    self.clusters[node] = self.clusters[start]
+
+    def connect_clusters(self):
+        while len({id(cluster) for cluster in self.clusters.values()}) != 1:
+            start = random.choice(list(self.neighbor_map.keys()))
+
+            for end in self.neighbor_map[start]:
+                if not end:
+                    continue
+
+                # Checks to see if start and end belong to the same cluster
+                if self.clusters[end] != self.clusters[start]:
+                    # Connect them if they belong to different clusters
+                    if start.space.adjacency(end.space) == "bottom":
+                        hallway = Hallway(start.room, end.room, Direction.Y)
+                    else:
+                        hallway = Hallway(start.room, end.room, Direction.X)
+
+                    hallway.connect()
+
+                    # If there is a successful connection
+                    if hallway.area:
+                        # Append to list of hallways
+                        self.hallways.append(hallway)
+
+                        self.clusters[start].extend(self.clusters[end])
+                        self.clusters[end] = self.clusters[start]
+
+                        for node in self.clusters[start]:
+                            self.clusters[node] = self.clusters[start]
+        
+        return
+            
+
 
     def write_to_grid(self, grid: list[list[int]], use_rooms: bool = False, draw_hallways: bool = False) -> None:
         """
@@ -465,7 +540,8 @@ class BSPTree:
 
         if draw_hallways and self.hallways:
             for hallway in self.hallways:
-                hallway.area.write_to_grid(grid, True)
+                if hallway:
+                    hallway.area.write_to_grid(grid, True)
 
             
 

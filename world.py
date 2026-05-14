@@ -40,7 +40,7 @@ class World:
         for row_index, row in enumerate(self.grid):
             cells = []
             for cell in row:
-                cell_text = "-" if cell == 1 else str(cell)
+                cell_text = " " if cell == 1 else str(cell)
                 cells.append(cell_text.rjust(cell_width))
             out_lines.append(" ".join(cells) + f"{row_label_sep}{row_index}")
 
